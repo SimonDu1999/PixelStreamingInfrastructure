@@ -31,6 +31,17 @@ class TwoWayMap {
 /**
  * Frontend logic
  */
+// let p = new Ping();
+// let pflag = true;
+let displayTime = 0;
+var interval;
+let testDuration = 0;
+let pData = 0;
+let dps = [];
+let times = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+let xVal = 1;
+let myChart = null;
+let csv = '';
 // Window events for a gamepad connecting
 let haveEvents = 'GamepadEvent' in window;
 let haveWebkitEvents = 'WebKitGamepadEvent' in window;
@@ -405,8 +416,8 @@ function onVideoEncoderAvgQP(data) {
 
 function onLatencyTestMessage(data) {
     let latencyTimingsAsString = new TextDecoder("utf-16").decode(data.slice(1));
-    console.log("Got latency timings from UE.");
-    console.log(latencyTimingsAsString);
+    // console.log("Got latency timings from UE.");
+    // console.log(latencyTimingsAsString);
     let latencyTimingsFromUE = JSON.parse(latencyTimingsAsString);
     if (webRtcPlayerObj) {
         webRtcPlayerObj.latencyTestTimings.SetUETimings(latencyTimingsFromUE);
@@ -581,9 +592,9 @@ function updateStatus() {
                 } else if (i == gamepadLayout.RightTrigger) {
                     //                       UEs right analog has a button index of 6
                     toStreamerHandlers.GamepadAnalog("GamepadAnalog", [j, 6, currButton.value]);
-                } else {
-                    toStreamerHandlers.GamepadButtonPressed("GamepadButtonPressed", [j, i, prevButton.pressed]);
                 }
+                toStreamerHandlers.GamepadButtonPressed("GamepadButtonPressed", [j, i, prevButton.pressed]);
+
             } else if (!currButton.pressed && prevButton.pressed) {
                 // release
                 if (i == gamepadLayout.LeftTrigger) {
@@ -592,9 +603,8 @@ function updateStatus() {
                 } else if (i == gamepadLayout.RightTrigger) {
                     //                       UEs right analog has a button index of 6
                     toStreamerHandlers.GamepadAnalog("GamepadAnalog", [j, 6, 0]);
-                } else {
-                    toStreamerHandlers.GamepadButtonReleased("GamepadButtonReleased", [j, i]);
-                }
+                } 
+                toStreamerHandlers.GamepadButtonReleased("GamepadButtonReleased", [j, i]);
             }
         }
         // Iterate over gamepad axes (we will increment in lots of 2 as there is 2 axes per stick)
@@ -838,11 +848,12 @@ function setupHtmlEvents() {
     }
 
     let latencyButton = document.getElementById('test-latency-button');
-    if (latencyButton) {
-        latencyButton.onclick = () => {
-            sendStartLatencyTest();
-        };
-    }
+    // if (latencyButton) {
+    //     latencyButton.onclick = () => {
+    interval = setInterval(sendStartLatencyTest,1000);
+
+    //     };
+    // }
 
     // Setup toggle and pair with some URL query string param.
     setupToggleWithUrlParams("prefer-sfu-tgl", "preferSFU");
@@ -959,6 +970,18 @@ function sendStartLatencyTest() {
     };
 
     webRtcPlayerObj.startLatencyTest(onTestStarted);
+    
+    // p.ping(function(err, data) {
+    //     // Also display error if err is returned.
+    //     if (err) {
+    //       console.log("error loading resource")
+    //       data = data + " " + err;
+    //     }
+    //     if(pflag){
+    //         pData = data;
+    //         pflag = false;
+    //     }
+    //   });
 }
 
 function setOverlay(htmlClass, htmlElement, onClickFunction) {
@@ -1401,6 +1424,10 @@ function setupStats(){
 
         // Calculate duration of run
         let runTime = (aggregatedStats.timestamp - aggregatedStats.timestampStart) / 1000;
+        displayTime = runTime;
+        if(runTime > 60){
+            clearInterval(interval);
+        }
         let timeValues = [];
         let timeDurations = [60, 60];
         for (let timeIndex = 0; timeIndex < timeDurations.length; timeIndex++) {
@@ -1484,6 +1511,8 @@ function setupStats(){
             inner.style.fill = color;
             dot.style.fill = color;
         }
+
+
         qualityTip.innerHTML = statsText;
 
         statsText += `<div>Duration: ${timeFormat.format(runTimeHours)}:${timeFormat.format(runTimeMinutes)}:${timeFormat.format(runTimeSeconds)}</div>`;
@@ -1524,12 +1553,12 @@ function setupStats(){
         }
     };
 
+
     webRtcPlayerObj.latencyTestTimings.OnAllLatencyTimingsReady = function(timings) {
 
         if (!timings.BrowserReceiptTimeMs) {
             return;
         }
-
         let latencyExcludingDecode = timings.BrowserReceiptTimeMs - timings.TestStartTimeMs;
         let encodeLatency = timings.UEEncodeMs;
         let uePixelStreamLatency = timings.UECaptureToSendMs;
@@ -1543,17 +1572,58 @@ function setupStats(){
         if (timings.FrameDisplayDeltaTimeMs && timings.BrowserReceiptTimeMs) {
             endToEndLatency = timings.FrameDisplayDeltaTimeMs + networkLatency + (typeof uePixelStreamLatency === "string" ? 0 : uePixelStreamLatency);
             browserSideLatency = timings.FrameDisplayDeltaTimeMs + (latencyExcludingDecode - networkLatency - ueTestDuration);
+
+            // write the csv
+            csv+=displayTime;
+            csv+=",";
+            csv+=networkLatency.toFixed(2);
+            csv+=",";
+            csv+=encodeLatency.toFixed(2);
+            csv+=",";
+            csv+=uePixelStreamLatency.toFixed(2);
+            csv+=",";
+            csv+=ueTestDuration.toFixed(2);
+            csv+=",";
+            csv+=timings.FrameDisplayDeltaTimeMs.toFixed(2);
+            csv+=",";
+            csv+=endToEndLatency.toFixed(2);
+            csv+="\n";
         }
 
         let latencyStatsInnerHTML = '';
         latencyStatsInnerHTML += `<div>Net latency RTT (ms): ${networkLatency.toFixed(2)}</div>`;
-        latencyStatsInnerHTML += `<div>UE Encode (ms): ${(typeof encodeLatency === "string" ? encodeLatency : encodeLatency.toFixed(2))}</div>`;
-        latencyStatsInnerHTML += `<div>UE Send to capture (ms): ${(typeof uePixelStreamLatency === "string" ? uePixelStreamLatency : uePixelStreamLatency.toFixed(2))}</div>`;
-        latencyStatsInnerHTML += `<div>UE probe duration (ms): ${ueTestDuration.toFixed(2)}</div>`;
-        latencyStatsInnerHTML += timings.FrameDisplayDeltaTimeMs && timings.BrowserReceiptTimeMs ? `<div>Browser composite latency (ms): ${timings.FrameDisplayDeltaTimeMs.toFixed(2)}</div>` : "";
-        latencyStatsInnerHTML += browserSideLatency ? `<div>Total browser latency (ms): ${browserSideLatency.toFixed(2)}</div>` : "";
-        latencyStatsInnerHTML += endToEndLatency ? `<div>Total latency (ms): ${endToEndLatency.toFixed(2)}</div>` : "";
+        // // latencyStatsInnerHTML += `<div>ping (ms): ${pData}</div>`
+        // pflag = true;
+        // latencyStatsInnerHTML += `<div>UE Encode (ms): ${(typeof encodeLatency === "string" ? encodeLatency : encodeLatency.toFixed(2))}</div>`;
+        // latencyStatsInnerHTML += `<div>UE Send to capture (ms): ${(typeof uePixelStreamLatency === "string" ? uePixelStreamLatency : uePixelStreamLatency.toFixed(2))}</div>`;
+        // latencyStatsInnerHTML += `<div>UE probe duration (ms): ${ueTestDuration.toFixed(2)}</div>`;
+        // latencyStatsInnerHTML += timings.FrameDisplayDeltaTimeMs && timings.BrowserReceiptTimeMs ? `<div>Browser composite latency (ms): ${timings.FrameDisplayDeltaTimeMs.toFixed(2)}</div>` : "";
+        // latencyStatsInnerHTML += browserSideLatency ? `<div>Total browser latency (ms): ${browserSideLatency.toFixed(2)}</div>` : "";
+        // latencyStatsInnerHTML += endToEndLatency ? `<div>Total latency (ms): ${endToEndLatency.toFixed(2)}</div>` : "";
         document.getElementById("LatencyStats").innerHTML = latencyStatsInnerHTML;
+
+        //plot the graph
+        // const ctx = document.getElementById('myChart');
+        // dps.push(networkLatency.toFixed(2));
+        // if(myChart!=null){
+        //     myChart.destroy();
+        // }
+        // myChart = new Chart(ctx, {
+        //     type: 'line',
+        //     data: {
+        //     labels: times,
+        //     datasets: [{
+        //         label: 'RTT',
+        //         data: dps,
+        //         borderColor: 'rgb(75, 192, 192)',
+        //         borderWidth: 1
+        //     }]
+        //     }
+        // });
+        // xVal++;
+
+        // if(xVal>20){ dps.shift()};
+
     }
 }
 
@@ -1835,6 +1905,7 @@ function sendMessageToStreamer(messageType, indata = []) {
         console.error(`Attempted to send a message to the streamer with message type: ${messageType}, but the frontend hasn't been configured to send such a message. Check you've added the message type in your cpp`);
         return;
     }
+
     // console.log(`Calculate size: ${new Blob(JSON.stringify(indata)).size}, Specified size: ${messageFormat.byteLength}`);
     data = new DataView(new ArrayBuffer(messageFormat.byteLength + 1));
 
@@ -2907,7 +2978,18 @@ function closeStream() {
     }
 }
 
+function download_csv_file(){
+    var hiddenElement = document.createElement('a');  
+    hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);  
+    hiddenElement.target = '_blank';  
+      
+    //provide the name for the CSV file to be downloaded  
+    hiddenElement.download = 'latencyStats.csv';  
+    hiddenElement.click();  
+}
+
 function load() {
+    csv = 'Time(s),Net RTT(ms),UE Encode(ms),UE Send to capture(ms),UE Probe Latency(ms),FrameDisplayDeltaTime(ms),Total Latency(ms)\n';
     parseURLParams();
     setupHtmlEvents();
     registerMessageHandlers();

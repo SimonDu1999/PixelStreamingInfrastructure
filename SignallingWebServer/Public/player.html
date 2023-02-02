@@ -24,11 +24,12 @@
 			}
 		}
 	</script>
+	<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.8.0/chart.min.js"></script> -->
+	<!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/alfg/ping.js@0.2.2/dist/ping.min.js"></script> -->
 	<script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 	<script type="text/javascript" src="scripts/webRtcPlayer.js"></script>
 	<script type="text/javascript" src="scripts/app.js"></script>
 </head>
-
 <body onload="load()">
 	<div id="playerUI" class="noselect">
 		<div id="player"></div>
@@ -268,6 +269,12 @@
 							</div>
 							<div id="latencyStatsContainer" class="statsContainer">
 								<div id=LatencyStats class="stats">No report yet</div>
+							</div>
+							<!-- <div id ="diagram">
+								<canvas id="myChart"></canvas>
+							</div> -->
+							<div>
+							<button onclick="download_csv_file()"> Download CSV </button>  
 							</div>
 						</section>
 					</div>
