@@ -27,12 +27,18 @@ class TwoWayMap {
         delete this.reverseMap[value];
     }
 }
-
+// video recorder
+// let record_startTime;
+// let record_duration = 0;
+const parts = [];
+let mediaRecorder;
+let recorderActive = false;
 /**
  * Frontend logic
  */
 // let p = new Ping();
 // let pflag = true;
+
 let displayTime = 0;
 var interval;
 let testDuration = 0;
@@ -1065,6 +1071,14 @@ function playVideo() {
         console.log("Browser does not support autoplaying video without interaction - to resolve this we are going to show the play button overlay.")
         showPlayOverlay();
     });
+    // add video recorder
+    recorderActive = true;
+    mediaRecorder = new MediaRecorder(webRtcPlayerObj.video.srcObject);
+    mediaRecorder.start(1000);
+    // record_startTime = Date.now();
+    mediaRecorder.ondataavailable = function(e){
+        parts.push(e.data);
+    }
 }
 
 function showPlayOverlay() {
@@ -1426,7 +1440,12 @@ function setupStats(){
         let runTime = (aggregatedStats.timestamp - aggregatedStats.timestampStart) / 1000;
         displayTime = runTime;
         if(runTime > 60){
-            clearInterval(interval);
+            if(recorderActive){
+                mediaRecorder.stop();
+                clearInterval(interval);
+                // record_duration = runTime*1000;
+                recorderActive = false;
+            }
         }
         let timeValues = [];
         let timeDurations = [60, 60];
@@ -2985,7 +3004,31 @@ function download_csv_file(){
       
     //provide the name for the CSV file to be downloaded  
     hiddenElement.download = 'latencyStats.csv';  
-    hiddenElement.click();  
+    hiddenElement.click();
+
+}
+
+function displayResult(blob){
+    //
+}
+
+function dowload_mp4_file(){   
+    const blob = new Blob(parts, {
+        type:"video/webm"
+    });
+
+    // let fixedBlob;
+    // ysFixWebmDuration(blob, record_duration, function(fixedBlob) {
+    //     displayResult(fixedBlob);
+    // });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    a.href = url;
+    a.download = "videoRecord.webm"
+    a.click();
 }
 
 function load() {
