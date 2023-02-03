@@ -1442,7 +1442,7 @@ function setupStats(){
         if(runTime > 60){
             if(recorderActive){
                 mediaRecorder.stop();
-                clearInterval(interval);
+                // clearInterval(interval);
                 // record_duration = runTime*1000;
                 recorderActive = false;
             }
@@ -1593,32 +1593,32 @@ function setupStats(){
             browserSideLatency = timings.FrameDisplayDeltaTimeMs + (latencyExcludingDecode - networkLatency - ueTestDuration);
 
             // write the csv
-            csv+=displayTime;
-            csv+=",";
-            csv+=networkLatency.toFixed(2);
-            csv+=",";
-            csv+=encodeLatency.toFixed(2);
-            csv+=",";
-            csv+=uePixelStreamLatency.toFixed(2);
-            csv+=",";
-            csv+=ueTestDuration.toFixed(2);
-            csv+=",";
-            csv+=timings.FrameDisplayDeltaTimeMs.toFixed(2);
-            csv+=",";
-            csv+=endToEndLatency.toFixed(2);
-            csv+="\n";
+            if(displayTime < 60){
+                csv+=displayTime;
+                csv+=",";
+                csv+=networkLatency.toFixed(2);
+                csv+=",";
+                csv+=encodeLatency.toFixed(2);
+                csv+=",";
+                csv+=uePixelStreamLatency.toFixed(2);
+                csv+=",";
+                csv+=ueTestDuration.toFixed(2);
+                csv+=",";
+                csv+=timings.FrameDisplayDeltaTimeMs.toFixed(2);
+                csv+=",";
+                csv+=endToEndLatency.toFixed(2);
+                csv+="\n";
+            }
         }
 
         let latencyStatsInnerHTML = '';
         latencyStatsInnerHTML += `<div>Net latency RTT (ms): ${networkLatency.toFixed(2)}</div>`;
-        // // latencyStatsInnerHTML += `<div>ping (ms): ${pData}</div>`
-        // pflag = true;
-        // latencyStatsInnerHTML += `<div>UE Encode (ms): ${(typeof encodeLatency === "string" ? encodeLatency : encodeLatency.toFixed(2))}</div>`;
-        // latencyStatsInnerHTML += `<div>UE Send to capture (ms): ${(typeof uePixelStreamLatency === "string" ? uePixelStreamLatency : uePixelStreamLatency.toFixed(2))}</div>`;
-        // latencyStatsInnerHTML += `<div>UE probe duration (ms): ${ueTestDuration.toFixed(2)}</div>`;
-        // latencyStatsInnerHTML += timings.FrameDisplayDeltaTimeMs && timings.BrowserReceiptTimeMs ? `<div>Browser composite latency (ms): ${timings.FrameDisplayDeltaTimeMs.toFixed(2)}</div>` : "";
-        // latencyStatsInnerHTML += browserSideLatency ? `<div>Total browser latency (ms): ${browserSideLatency.toFixed(2)}</div>` : "";
-        // latencyStatsInnerHTML += endToEndLatency ? `<div>Total latency (ms): ${endToEndLatency.toFixed(2)}</div>` : "";
+        latencyStatsInnerHTML += `<div>UE Encode (ms): ${(typeof encodeLatency === "string" ? encodeLatency : encodeLatency.toFixed(2))}</div>`;
+        latencyStatsInnerHTML += `<div>UE Send to capture (ms): ${(typeof uePixelStreamLatency === "string" ? uePixelStreamLatency : uePixelStreamLatency.toFixed(2))}</div>`;
+        latencyStatsInnerHTML += `<div>UE probe duration (ms): ${ueTestDuration.toFixed(2)}</div>`;
+        latencyStatsInnerHTML += timings.FrameDisplayDeltaTimeMs && timings.BrowserReceiptTimeMs ? `<div>Browser composite latency (ms): ${timings.FrameDisplayDeltaTimeMs.toFixed(2)}</div>` : "";
+        latencyStatsInnerHTML += browserSideLatency ? `<div>Total browser latency (ms): ${browserSideLatency.toFixed(2)}</div>` : "";
+        latencyStatsInnerHTML += endToEndLatency ? `<div>Total latency (ms): ${endToEndLatency.toFixed(2)}</div>` : "";
         document.getElementById("LatencyStats").innerHTML = latencyStatsInnerHTML;
 
         //plot the graph
@@ -3008,9 +3008,9 @@ function download_csv_file(){
 
 }
 
-function displayResult(blob){
-    //
-}
+// function displayResult(blob){
+//     //
+// }
 
 function dowload_mp4_file(){   
     const blob = new Blob(parts, {
